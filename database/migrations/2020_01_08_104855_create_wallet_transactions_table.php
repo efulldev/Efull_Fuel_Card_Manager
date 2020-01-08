@@ -17,14 +17,15 @@ class CreateWalletTransactionsTable extends Migration
             $table->bigIncrements('id');
             $table->string('trans_ref_id');
             $table->float('amount');
-            $table->boolean('is_credit');
-            $table->string('wallet_id');
-            $table->string('company_id');
-            $table->string('description');
-            $table->string('initiator_id');
-            $table->string('source');
-            $table->string('destination');
-            $table->string('destination_id');
+            $table->boolean('is_credit')->default(false);
+            $table->string('wallet_id')->nullable();
+            $table->string('company_id')->nullable();;
+            $table->string('card_no')->nullable();;
+            $table->string('description')->nullable();;
+            $table->string('initiator_id')->nullable();;
+            $table->string('source')->nullable();;
+            $table->string('destination')->nullable();;
+            $table->string('destination_id')->nullable();;
             $table->timestamps();
         });
     }

@@ -23,11 +23,20 @@ public $base_uri = 'http://openapi.efupay.net';
     public function login(){ 
         if(Auth::attempt(['email' => request('email'), 'password' => request('password')])){ 
             $user = Auth::user(); 
-            $success['token'] =  $user->createToken('MyApp')-> accessToken; 
-            return response()->json(['success' => $success], $this->successStatus); 
+            if($user->user_cat == 1){
+                $success['token'] =  $user->createToken('MyApp')->accessToken; 
+                $success['user'] = $user;
+                return response()->json(['success' => $success], $this->successStatus); 
+            }else{
+                // revoke tokens
+                foreach ($user->tokens as $key => $token) {
+                    $token->revoke();
+                }
+                return response()->json(['error'=>'Unauthorised', 'message' => 'Account is not permitted'], 401);  
+            }
         } 
         else{ 
-            return response()->json(['error'=>'Unauthorised'], 401); 
+            return response()->json(['error'=>'Unauthorised', 'message' => 'Invalid login credentials'], 401); 
         } 
     }
 /** 
@@ -48,8 +57,10 @@ public $base_uri = 'http://openapi.efupay.net';
         $input = $request->all(); 
         $input['password'] = bcrypt($input['password']); 
         $user = User::create($input); 
-        $success['token'] =  $user->createToken('MyApp')-> accessToken; 
-        $success['name'] =  $user->name;
+        $user->user_cat = $request->input('user_cat');
+        $user->save();
+        $success['token'] =  $user->createToken('MyApp')->accessToken; 
+        $success['user'] =  $user;
         return response()->json(['success'=>$success], $this->successStatus); 
     }
 /** 
@@ -59,7 +70,7 @@ public $base_uri = 'http://openapi.efupay.net';
      */ 
     public function details(){ 
         $user = Auth::user(); 
-        return response()->json(['success' => $user], $this->successStatus); 
+        return response()->json(['user' => $user], $this->successStatus); 
     } 
 
 
@@ -91,37 +102,4 @@ public $base_uri = 'http://openapi.efupay.net';
         }
     }
 
-
-    private function curlRequest($url, $method, $data_string){
-        
-        $curl = curl_init();
-        
-        curl_setopt_array($curl, array(
-            CURLOPT_URL => $url,
-            CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_ENCODING => "utf-8",
-            CURLOPT_MAXREDIRS => 10,
-            CURLOPT_TIMEOUT => 30000,
-            CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
-            CURLOPT_CUSTOMREQUEST => $method,
-            CURLOPT_POSTFIELDS => $data_string,
-            CURLOPT_HTTPHEADER => array(
-                // Set here requred headers
-                "accept: */*",
-                "accept-language: en-US,en;q=0.8",
-                "Content-Type:  form-data",
-            ),
-        ));
-        
-        $response = curl_exec($curl);
-        $err = curl_error($curl);
-        
-        curl_close($curl);
-        
-        if ($err) {
-            return "cURL Error #:" . $err;
-        } else {
-            return $response;
-        }
-    }
 }
