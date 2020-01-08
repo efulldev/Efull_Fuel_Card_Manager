@@ -81,8 +81,10 @@
 
             <div class="content">
                 <div class="title m-b-md">
-                    Laravel
+                    Laravelly
                 </div>
+
+                <div id="example"></div>
 
                 <div class="links">
                     <a href="https://laravel.com/docs">Docs</a>
@@ -97,4 +99,5 @@
             </div>
         </div>
     </body>
+    <script src="{{asset('./js/app.js')}}"></script>
 </html>
