@@ -10,12 +10,15 @@ use Validator;
 use GuzzleHttp\Client;
 use GuzzleHttp\Psr7;
 use GuzzleHttp\Exception\RequestException;
-
+use App\Traits\ApiTrait;
 
 class UserController extends Controller {
-public $successStatus = 200;
-public $base_uri = 'http://openapi.efupay.net';
-/** 
+    use ApiTrait;
+    public $successStatus = 200;
+    public $base_uri = 'http://openapi.efupay.net';
+
+
+    /** 
      * login api 
      * 
      * @return \Illuminate\Http\Response 
@@ -23,7 +26,7 @@ public $base_uri = 'http://openapi.efupay.net';
     public function login(){ 
         if(Auth::attempt(['email' => request('email'), 'password' => request('password')])){ 
             $user = Auth::user(); 
-            if($user->user_cat == 1){
+            if($user->isAdmin() || $user->isClient() || $user->isFleetOwner() || $user->isAttendant()){
                 $success['token'] =  $user->createToken('MyApp')->accessToken; 
                 $success['user'] = $user;
                 return response()->json(['success' => $success], $this->successStatus); 
@@ -39,7 +42,8 @@ public $base_uri = 'http://openapi.efupay.net';
             return response()->json(['error'=>'Unauthorised', 'message' => 'Invalid login credentials'], 401); 
         } 
     }
-/** 
+
+    /** 
      * Register api 
      * 
      * @return \Illuminate\Http\Response 
@@ -63,7 +67,32 @@ public $base_uri = 'http://openapi.efupay.net';
         $success['user'] =  $user;
         return response()->json(['success'=>$success], $this->successStatus); 
     }
-/** 
+
+    /** 
+     * client auth api 
+     * 
+     * @return \Illuminate\Http\Response 
+     */ 
+    public function clientAuth(Request $request){ 
+        if(Auth::attempt(['email' => request('client_id'), 'password' => request('client_secret')])){ 
+            $client = Auth::user(); 
+            if($client->isClient() ){
+                $token =  $client->createToken('MyApp')->accessToken; 
+                return response()->json(['token' => $token], $this->successStatus); 
+            }else{
+                // revoke tokens
+                foreach ($client->tokens as $key => $token) {
+                    $token->revoke();
+                }
+                return response()->json(['error'=>'Unauthorised', 'message' => 'Account is not permitted'], 401);  
+            }
+        } 
+        else{ 
+            return response()->json(['error'=>'Unauthorised', 'message' => 'Client auth failed'], 401); 
+        } 
+    }
+
+    /** 
      * details api 
      * 
      * @return \Illuminate\Http\Response 

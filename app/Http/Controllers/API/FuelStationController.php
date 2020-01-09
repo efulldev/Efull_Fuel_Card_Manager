@@ -5,9 +5,12 @@ namespace App\Http\Controllers\API;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\FillingStation;
+use App\Traits\ApiTrait;
 
 class FuelStationController extends Controller
 {
+    use ApiTrait;
+    
     // get fuel station details
     public function details($id){
         $station = FillingStation::findorfail($id);

@@ -6,10 +6,11 @@ use Laravel\Passport\HasApiTokens;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use App\Traits\ApiTrait;
 
 class User extends Authenticatable
 {
-    use HasApiTokens, Notifiable;
+    use HasApiTokens, Notifiable, ApiTrait;
 
     /**
      * The attributes that are mass assignable.
@@ -37,4 +38,45 @@ class User extends Authenticatable
     protected $casts = [
         'email_verified_at' => 'datetime',
     ];
+
+    // for middlewares
+    public function isAdmin(){
+        if($this->user_cat == $this->getUserCatCode("ADMIN")){
+            return true;
+        }else{
+            return false;
+        }
+    }
+
+    public function isClient(){
+        if($this->user_cat == $this->getUserCatCode("CLIENT")){
+            return true;
+        }else{
+            return false;
+        }
+    }
+
+    public function isFleetOwner(){
+        if($this->user_cat == $this->getUserCatCode("FLEET")){
+            return true;
+        }else{
+            return false;
+        }
+    }
+
+    public function isStation(){
+        if($this->user_cat == $this->getUserCatCode("STATION")){
+            return true;
+        }else{
+            return false;
+        }
+    }
+
+    public function isAttendant(){
+        if($this->user_cat == $this->getUserCatCode("ATTENDANT")){
+            return true;
+        }else{
+            return false;
+        }
+    }
 }
