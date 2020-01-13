@@ -7,15 +7,14 @@ use Illuminate\Http\Request;
 use App\User; 
 use Illuminate\Support\Facades\Auth; 
 use Validator;
+use App\Traits\ApiTrait;
 use GuzzleHttp\Client;
 use GuzzleHttp\Psr7;
 use GuzzleHttp\Exception\RequestException;
-use App\Traits\ApiTrait;
 
 class UserController extends Controller {
     use ApiTrait;
     public $successStatus = 200;
-    public $base_uri = 'http://openapi.efupay.net';
 
 
     /** 
@@ -103,8 +102,61 @@ class UserController extends Controller {
     } 
 
 
-    // make API call to external endpoint
-    public function efuPayAccessCode(Request $request){
+    // getEfuPayAcc
+    public function getEfuPayAcc($phone_no){
+        // get access token from Efu Pay
+        $access_token = $this->getEfuPayAccessToken($this->appId, $this->appSecret);
+        // return json_encode($access_token); exit;
+        if ($access_token != null) {
+            try{
+                $client = new Client(['base_uri' => $this->base_uri]);
+                $response = $client->request('GET', '/gateway/v1/account/'.$phone_no, [
+                    'headers' => [
+                        'Accept' => 'application/json',
+                        'Content-type' => 'application/json',
+                        'accessToken' => "{$access_token}"
+                    ]
+                ]);
+                    return $response->getBody()->getContents();
+            }
+            catch (RequestException $e) {
+                if ($e->hasResponse()) {
+                    return Psr7\str($e->getResponse());
+                    // return json_encode($access_token);
+                }
+            }
+        }
+        return null;
+    }
+
+    // getEfuPayAccCards
+    public function getEfuPayAccCards($phone_no){
+        // get access token from Efu Pay
+        $access_token = $this->getEfuPayAccessToken($this->appId, $this->appSecret);
+        if ($access_token != null) {
+            try{
+                $client = new Client(['base_uri' => $this->base_uri]);
+                $response = $client->request('GET', '/gateway/v1/account/efucard/list/'.$phone_no, [
+                    'headers' => [
+                        'Accept' => 'application/json',
+                        'Content-type' => 'application/json',
+                        'accessToken' => "{$access_token}"
+                    ]
+                ]);
+                    return $response->getBody()->getContents();
+            }
+            catch (RequestException $e) {
+                if ($e->hasResponse()) {
+                    return Psr7\str($e->getResponse());
+                    // return json_encode($access_token);
+                }
+            }
+        }
+        return null;
+    }
+
+     // make API call to external endpoint
+     public function efuPayAccessCode(Request $request){
         try{
             $client = new Client(['base_uri' => $this->base_uri]);
             $response = $client->request('POST', '/gateway/v1/token', [

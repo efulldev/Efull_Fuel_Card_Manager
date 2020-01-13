@@ -15,7 +15,7 @@ class isClient
      * @return mixed
      */
     public function handle($request, Closure $next)
-        { if (Auth::user() &&  Auth::user()->user_cat == "499") {
+        { if (Auth::user() &&  Auth::user()->isClient()) {
             return $next($request);
         }
 

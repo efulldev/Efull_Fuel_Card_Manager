@@ -4,7 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-class UserCategory extends Migration
+class CreateEfupayTokensTable extends Migration
 {
     /**
      * Run the migrations.
@@ -13,9 +13,10 @@ class UserCategory extends Migration
      */
     public function up()
     {
-        Schema::create('user_categories', function (Blueprint $table) {
+        Schema::create('efupay_tokens', function (Blueprint $table) {
             $table->bigIncrements('id');
-            $table->string('category_name');
+            $table->string('token');
+            $table->dateTime('expires_at');
             $table->timestamps();
         });
     }
@@ -27,6 +28,6 @@ class UserCategory extends Migration
      */
     public function down()
     {
-        //
+        Schema::dropIfExists('efupay_tokens');
     }
 }

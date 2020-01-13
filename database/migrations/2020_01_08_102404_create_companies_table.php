@@ -16,12 +16,13 @@ class CreateCompaniesTable extends Migration
         Schema::create('companies', function (Blueprint $table) {
             $table->bigIncrements('id');
             $table->string('company_name');
-            $table->string('wallet_id');
+            $table->string('wallet_id')->nullable();
+            $table->string('ext_table_id')->nullable();
             $table->mediumText('company_address');
             $table->string('company_phone');
             $table->string('company_email');
-            $table->string('reg_number');
-            $table->boolean('is_active');
+            $table->string('reg_number')->nullable();
+            $table->boolean('is_active')->default(true);
             $table->timestamps();
         });
     }

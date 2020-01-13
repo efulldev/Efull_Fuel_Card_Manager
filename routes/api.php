@@ -34,6 +34,17 @@ Route::group(['middleware' => 'auth:api'], function(){
     Route::GET('details', 'API\UserController@details');
 
     /*
+        Account Group
+    */
+    Route::group(['prefix' => 'account'], function(){
+        // get efupay user account using phone no.
+        Route::GET('/{phone_no}', 'API\UserController@getEfuPayAcc');
+        // get all cards bound to an account
+        Route::GET('/cards/{phone_no}', 'API\UserController@getEfuPayAccCards');
+
+    });
+
+    /*
         Fleet Owner Group
     */
     Route::group(['prefix' => 'fleetOwner'], function(){
@@ -84,6 +95,8 @@ Route::group(['middleware' => 'auth:api'], function(){
         Route::group(['prefix' => 'operations'], function(){
             // create a new client app auth account
             Route::POST('/newClient', 'API\AdminController@newClient');
+            // create a new wallet account
+            Route::POST('/newWallet', 'API\AdminController@newWallet');
         });
     });
 
@@ -100,5 +113,5 @@ Route::group(['middleware' => 'auth:api'], function(){
             Route::POST('/new', 'API\WalletController@newTransaction');
         });
     });
-    
+
 });

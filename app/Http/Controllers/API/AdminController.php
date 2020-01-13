@@ -6,9 +6,16 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Validator;
 use App\User;
+use App\Company;
+use App\Card;
 use Hash;
 use Auth;
 use App\Traits\ApiTrait;
+use GuzzleHttp\Client;
+use GuzzleHttp\Psr7;
+use GuzzleHttp\RequestOptions;
+use GuzzleHttp\Exception\RequestException;
+use App\Http\Requests;
 
 
 class AdminController extends Controller
@@ -56,4 +63,81 @@ class AdminController extends Controller
             ]);
         }
     }
+
+    // newWallet
+    public function newWallet(Request $request){
+        // get access token from Efu Pay
+        $access_token = $this->getEfuPayAccessToken($this->appId, $this->appSecret);
+        if ($access_token != null) {
+            try{
+                $client = new Client(['base_uri' => $this->base_uri]);
+                $response = $client->post('/gateway/v1/account/open', [
+                    RequestOptions::JSON => [
+                        "customerType" => "2",
+                        "countryCode" => "234",
+                        "loginName" => $request->input('phone_no'),
+                        "phoneNumber" => $request->input('phone_no'),
+                        "firstName" => $request->input('first_name'),
+                        "lastName" => $request->input('last_name'),
+                        "companyName" => $request->input('company_name'),
+                        "loginPassword" => $request->input('login_password'),
+                        "pin" => $request->input('card_pin'),
+                        "cardSn" => $request->input('card_sn')
+                    ],
+
+                    'headers' => [
+                        'Accept' => 'application/json',
+                        'Content-type' => 'application/json',
+                        'accessToken' => "{$access_token}"
+                    ]
+                ]);
+                $body = $response->getBody();
+                // check if account creation was successful
+                if(strlen($body) == 0){ //successfully created on the efull pay platform
+                    // create user account on fuel card database
+                    // this user account would be used by the company manager to
+                    // monitor thier dashboard
+                    $user = new User();
+                    $user->name = $request->input('first_name')." ".$request->input('last_name');
+                    $user->password = bcrypt($request->input('login_password')); 
+                    $user->user_cat = $this->getUserCatCode(strtoupper($request->input('acc_type')));
+                    $user->phone_no = $request->input('phone_no');
+                    $user->email = $request->input('email');
+                    $user->save();
+                    // create a company record on the db
+                    $com = new Company();
+                    $com->company_name = $request->input("company_name");
+                    $com->wallet_id = $request->input("card_sn");
+                    $com->company_address = $request->input("company_address");
+                    $com->company_phone = $request->input("phone_no");
+                    $com->company_email = $request->input("email");
+                    $com->reg_number = $request->input("reg_number");
+                    $com->is_active = true;
+                    $com->save();
+                    // bind card_sn to company wallet on efuPay
+                    $card_binding = $this->bindCardToEfuWallet($access_token, $com->company_phone, $com->wallet_id);
+
+                    // notify admin of success
+                    return json_encode([
+                        "code" => $response->getStatusCode(),
+                        "account" => $user,
+                        "company" => $com,
+                        "wallet_id_binding"=> $card_binding,
+                    ]);
+                }
+                return json_encode([
+                    "code" => $response->getStatusCode(),
+                    "body" => $body,
+                ]);
+            }
+            catch (RequestException $e) {
+                if ($e->hasResponse()) {
+                    return Psr7\str($e->getResponse());
+                    // return json_encode($access_token);
+                }
+            }
+        }
+        return null;
+    }
+
 }
