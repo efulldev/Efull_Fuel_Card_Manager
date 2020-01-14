@@ -66,6 +66,9 @@ Route::group(['middleware' => 'auth:api'], function(){
     Route::group(['prefix' => 'card'], function(){
         // get Card's details
         Route::GET('/{card_no}', 'API\CardController@details');
+        
+        // get efu wallet details using card sn
+        Route::GET('/efupay/{card_no}', 'API\CardController@efuPayCardData');
 
         // verify card PIN
         Route::POST('/validate', 'API\CardController@PinValidation');
@@ -94,7 +97,6 @@ Route::group(['middleware' => 'auth:api'], function(){
         */
         Route::group(['prefix' => 'operations'], function(){
             // create a new client app auth account
-            Route::POST('/newClient', 'API\AdminController@newClient');
             // create a new wallet account
             Route::POST('/newWallet', 'API\AdminController@newWallet');
         });
@@ -111,6 +113,15 @@ Route::group(['middleware' => 'auth:api'], function(){
         Route::group(['prefix' => 'transact'], function(){
             // get transaction history
             Route::POST('/new', 'API\WalletController@newTransaction');
+        });
+
+        /*
+            operations Group
+        */
+        Route::group(['prefix' => 'operations'], function(){
+            // bind a wallet using card sn to a client app account
+            Route::POST('/bind/wallet', 'API\ClientController@bindWallet');
+
         });
     });
 

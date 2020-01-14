@@ -9,6 +9,8 @@ use GuzzleHttp\RequestOptions;
 
 use App\Http\Requests;
 use App\EfupayToken;
+use App\Company;
+use App\Card;
 
 trait ApiTrait
 {
@@ -34,6 +36,9 @@ trait ApiTrait
                 break;
             case 'ADMIN':
                 $code = "37011";
+                break;
+            case 'MERCHANT':
+                $code = "34947";
                 break;
             default:
                 $code = null;
@@ -62,11 +67,33 @@ trait ApiTrait
         }
         catch (RequestException $e) {
             if ($e->hasResponse()) {
-                // return Psr7\str($e->getResponse());
-                return false;
+                return Psr7\str($e->getResponse());
+                // return false;
             }
         }
         return false;
+    }
+
+    // generate wallet id with phone no
+    public function genWalletId($phone_no){
+        $raw = str_shuffle(substr($phone_no, 2, strlen($phone_no) - 1));
+        $predict = "117".substr($raw, 0, strlen($raw) - 2);
+        // check if the number has been assigned to a user
+        $com_check = Company::where("wallet_id", $predict)->first();
+        if($com_check){
+            // exists
+            genWalletId($phone_no);
+            exit;
+        }else{
+            // check if it has been added to cards list
+            $card_check = Card::where("card_no", $predict)->first();
+            if($card_check){
+                // exists
+                genWalletId($phone_no);
+                exit;
+            }
+        }
+        return $predict;
     }
 
 

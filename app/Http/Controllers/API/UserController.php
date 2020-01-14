@@ -22,13 +22,21 @@ class UserController extends Controller {
      * 
      * @return \Illuminate\Http\Response 
      */ 
-    public function login(){ 
+    public function login(Request $request){ 
         if(Auth::attempt(['email' => request('email'), 'password' => request('password')])){ 
             $user = Auth::user(); 
-            if($user->isAdmin() || $user->isClient() || $user->isFleetOwner() || $user->isAttendant()){
-                $success['token'] =  $user->createToken('MyApp')->accessToken; 
-                $success['user'] = $user;
-                return response()->json(['success' => $success], $this->successStatus); 
+            if($user->isAdmin() || $user->isClient() || $user->isFleetOwner() || $user->isAttendant() || $user->isMerchant()){
+                if($user->user_cat == $this->getUserCatCode(strtoupper($request->input('acc_type')))){
+                    $success['token'] =  $user->createToken('MyApp')->accessToken; 
+                    $success['user'] = $user;
+                    return response()->json(['success' => $success], $this->successStatus); 
+                }else{
+                    // revoke tokens
+                    foreach ($user->tokens as $key => $token) {
+                        $token->revoke();
+                    }
+                    return response()->json(['error'=>'Unauthorised', 'message' => 'Account type is not defined correctly'], 401); 
+                }
             }else{
                 // revoke tokens
                 foreach ($user->tokens as $key => $token) {

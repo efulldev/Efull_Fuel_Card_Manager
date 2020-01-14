@@ -68,6 +68,7 @@ class AdminController extends Controller
     public function newWallet(Request $request){
         // get access token from Efu Pay
         $access_token = $this->getEfuPayAccessToken($this->appId, $this->appSecret);
+        $card_sn = $this->genWalletId($request->input('phone_no'));
         if ($access_token != null) {
             try{
                 $client = new Client(['base_uri' => $this->base_uri]);
@@ -82,7 +83,7 @@ class AdminController extends Controller
                         "companyName" => $request->input('company_name'),
                         "loginPassword" => $request->input('login_password'),
                         "pin" => $request->input('card_pin'),
-                        "cardSn" => $request->input('card_sn')
+                        "cardSn" => $card_sn
                     ],
 
                     'headers' => [
@@ -107,13 +108,23 @@ class AdminController extends Controller
                     // create a company record on the db
                     $com = new Company();
                     $com->company_name = $request->input("company_name");
-                    $com->wallet_id = $request->input("card_sn");
+                    $com->wallet_id = $card_sn;
                     $com->company_address = $request->input("company_address");
                     $com->company_phone = $request->input("phone_no");
                     $com->company_email = $request->input("email");
                     $com->reg_number = $request->input("reg_number");
                     $com->is_active = true;
                     $com->save();
+                    // create company default card
+                    $card = new Card();
+                    $card->card_no = $card_sn;
+                    $card->card_pin = hash('sha256', "123456");
+                    $card->expiry_month = "12";
+                    $card->expiry_year = "25";
+                    $card->company_id = $com->id;
+                    $card->holder_id = null;
+                    $card->is_active = true;
+                    $card->save();
                     // bind card_sn to company wallet on efuPay
                     $card_binding = $this->bindCardToEfuWallet($access_token, $com->company_phone, $com->wallet_id);
 

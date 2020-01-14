@@ -79,4 +79,13 @@ class User extends Authenticatable
             return false;
         }
     }
+
+
+    public function isMerchant(){
+        if($this->user_cat == $this->getUserCatCode("MERCHANT")){
+            return true;
+        }else{
+            return false;
+        }
+    }
 }

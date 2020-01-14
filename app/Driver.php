@@ -12,6 +12,6 @@ class Driver extends Model
 
 
     public function cards(){
-        return $this->hasMany('App\Card', 'driver_id')->orderBy('id', 'DESC');;
+        return $this->hasMany('App\Card', 'holder_id')->orderBy('id', 'DESC');;
     }
 }

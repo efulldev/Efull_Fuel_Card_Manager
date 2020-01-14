@@ -16,12 +16,13 @@ class CreateCardsTable extends Migration
         Schema::create('cards', function (Blueprint $table) {
             $table->bigIncrements('id');
             $table->string('card_no');
-            $table->string('expiry_month');
-            $table->string('expiry_year');
+            $table->string('expiry_month')->nullable();
+            $table->string('expiry_year')->nullable();
             $table->string('card_pin');
-            $table->string('company_id');
-            $table->string('driver_id');
-            $table->boolean('is_active');
+            $table->string('company_id')->nullable();
+            $table->string('holder_id')->nullable();
+            $table->string('card_bind_hash')->nullable();
+            $table->boolean('is_active')->default(true);
             $table->timestamps();
         });
     }
