@@ -105,36 +105,43 @@ class AdminController extends Controller
                     $user->phone_no = $request->input('phone_no');
                     $user->email = $request->input('email');
                     $user->save();
-                    // create a company record on the db
-                    $com = new Company();
-                    $com->company_name = $request->input("company_name");
-                    $com->wallet_id = $card_sn;
-                    $com->company_address = $request->input("company_address");
-                    $com->company_phone = $request->input("phone_no");
-                    $com->company_email = $request->input("email");
-                    $com->reg_number = $request->input("reg_number");
-                    $com->is_active = true;
-                    $com->save();
-                    // create company default card
-                    $card = new Card();
-                    $card->card_no = $card_sn;
-                    $card->card_pin = hash('sha256', "123456");
-                    $card->expiry_month = "12";
-                    $card->expiry_year = "25";
-                    $card->company_id = $com->id;
-                    $card->holder_id = null;
-                    $card->is_active = true;
-                    $card->save();
-                    // bind card_sn to company wallet on efuPay
-                    $card_binding = $this->bindCardToEfuWallet($access_token, $com->company_phone, $com->wallet_id);
-
-                    // notify admin of success
-                    return json_encode([
-                        "code" => $response->getStatusCode(),
-                        "account" => $user,
-                        "company" => $com,
-                        "wallet_id_binding"=> $card_binding,
-                    ]);
+                    if($user->user_cat != $this->getUserCatCode("ADMIN")){
+                        // create a company record on the db
+                        $com = new Company();
+                        $com->company_name = $request->input("company_name");
+                        $com->wallet_id = $card_sn;
+                        $com->company_address = $request->input("company_address");
+                        $com->company_phone = $request->input("phone_no");
+                        $com->company_email = $request->input("email");
+                        $com->reg_number = $request->input("reg_number");
+                        $com->is_active = true;
+                        $com->save();
+                        // create company default card
+                        $card = new Card();
+                        $card->card_no = $card_sn;
+                        $card->card_pin = hash('sha256', "123456");
+                        $card->expiry_month = "12";
+                        $card->expiry_year = "25";
+                        $card->company_id = $com->id;
+                        $card->holder_id = null;
+                        $card->is_active = true;
+                        $card->save();
+                        // bind card_sn to company wallet on efuPay
+                        $card_binding = $this->bindCardToEfuWallet($access_token, $com->company_phone, $com->wallet_id);
+                        // notify admin of success
+                        return json_encode([
+                            "code" => $response->getStatusCode(),
+                            "account" => $user,
+                            "company" => $com,
+                            "wallet_id_binding"=> $card_binding,
+                        ]);
+                    }else{
+                        // notify admin of success
+                        return json_encode([
+                            "code" => $response->getStatusCode(),
+                            "account" => $user,
+                        ]);
+                    }
                 }
                 return json_encode([
                     "code" => $response->getStatusCode(),

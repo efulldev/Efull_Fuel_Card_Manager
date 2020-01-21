@@ -17,6 +17,7 @@ class CreateCardHashesTable extends Migration
             $table->bigIncrements('id');
             $table->string('card_no');
             $table->string('card_hash');
+            $table->string('device_id');
             $table->boolean('is_valid')->default(true);
             $table->timestamps();
         });

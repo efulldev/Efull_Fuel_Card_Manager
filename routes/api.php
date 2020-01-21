@@ -22,8 +22,6 @@ Route::POST('getToken', 'API\UserController@clientAuth');
 
 Route::POST('login', 'API\UserController@login');
 
-Route::POST('register', 'API\UserController@register');
-
 Route::POST('efuPayAccessCode', 'API\UserController@efuPayAccessCode');
 
 // request for Access token
@@ -92,6 +90,9 @@ Route::group(['middleware' => 'auth:api'], function(){
         ADMIN MIDDLEWARE
     */
     Route::group(['middleware' => 'admin'], function () {
+
+        Route::POST('register', 'API\UserController@register');
+
         /*
             operations Group
         */
@@ -110,10 +111,26 @@ Route::group(['middleware' => 'auth:api'], function(){
         /*
             transactions Group
         */
-        Route::group(['prefix' => 'transact'], function(){
+        Route::group(['prefix' => 'transaction'], function(){
             // get transaction history
             Route::POST('/new', 'API\WalletController@newTransaction');
         });
+
+        /*
+            operations Group
+        */
+        Route::group(['prefix' => 'operations'], function(){
+            // bind a wallet using card sn to a client app account
+            Route::POST('/bind/wallet', 'API\ClientController@bindWallet');
+
+        });
+    });
+
+    /*
+        MERCHANT MIDDLEWARE
+        ** This is used by merchants who have been authenticated
+    */
+    Route::group(['middleware' => 'merchant'], function () {
 
         /*
             operations Group

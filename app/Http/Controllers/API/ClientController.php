@@ -18,9 +18,11 @@ class ClientController extends Controller
     use ApiTrait;
     
     public function bindWallet(Request $request){
-        $extern_id = $request->input('app_extern_id');
-        $wallet_id = $request->input('wallet_id');
-        $pin_hash = $request->input('wallet_pin_hash');
+        $params = json_decode($request->getContent(), true);
+        $extern_id = $params['app_extern_id'];
+        $wallet_id = $params['wallet_id'];
+        $pin_hash = $params['wallet_pin_hash'];
+        $terminal_device_id = $params['terminal_device_id'];
         // check if a company with the extern_table exists
         $com_check = Company::where("ext_table_id", $extern_id)->first();
         // check that company exists
@@ -44,23 +46,24 @@ class ClientController extends Controller
                                     ]
                                 ]);
                                 $body = $response->getBody()->getContents();
-                                    // wallet account exists on efu pay API
-                                    // generate bind hash 
-                                    $dummy = "ABCDEFGH012345678_";
-                                    $dummy = str_shuffle($dummy);
-                                    $card_hash = Hash::make($dummy);
-                                    // store hash
-                                    $hash = new CardHash();
-                                    $hash->card_no = $wallet_id;
-                                    $hash->card_hash = $card_hash;
-                                    $hash->is_valid = true;
-                                    $hash->save();
-                                    // return response
-                                    return json_encode([
-                                            "bind_success" => true,
-                                            "wallet" => json_decode($body),
-                                            "card_hash" => $card_hash,
-                                        ]);
+                                // wallet account exists on efu pay API
+                                // generate bind hash 
+                                $dummy = "ABCDEFGH012345678_";
+                                $dummy = str_shuffle($dummy);
+                                $card_hash = Hash::make($dummy);
+                                // store hash
+                                $hash = new CardHash();
+                                $hash->card_no = $wallet_id;
+                                $hash->card_hash = $card_hash;
+                                $hash->device_id = $terminal_device_id;
+                                $hash->is_valid = true;
+                                $hash->save();
+                                // return response
+                                return json_encode([
+                                        "bind_success" => true,
+                                        "wallet" => json_decode($body),
+                                        "card_hash" => $card_hash,
+                                    ]);
                             }catch(RequestException $e) {
                                 if ($e->hasResponse()) {
                                     // return Psr7\str($e->getResponse());

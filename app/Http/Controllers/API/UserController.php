@@ -14,8 +14,8 @@ use GuzzleHttp\Exception\RequestException;
 
 class UserController extends Controller {
     use ApiTrait;
-    public $successStatus = 200;
 
+    public $successStatus = 200;
 
     /** 
      * login api 
@@ -61,6 +61,7 @@ class UserController extends Controller {
             'email' => 'required|email', 
             'password' => 'required', 
             'c_password' => 'required|same:password', 
+            'acc_type' => 'required',
         ]);
         if ($validator->fails()) { 
             return response()->json(['error'=>$validator->errors()], 401);            
@@ -68,7 +69,7 @@ class UserController extends Controller {
         $input = $request->all(); 
         $input['password'] = bcrypt($input['password']); 
         $user = User::create($input); 
-        $user->user_cat = $request->input('user_cat');
+        $user->user_cat = $this->getUserCatCode(strtoupper($request->input('acc_type')));//$request->input('user_cat');
         $user->save();
         $success['token'] =  $user->createToken('MyApp')->accessToken; 
         $success['user'] =  $user;
