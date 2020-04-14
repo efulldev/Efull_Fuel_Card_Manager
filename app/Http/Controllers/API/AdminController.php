@@ -22,6 +22,7 @@ class AdminController extends Controller
 {
     use ApiTrait;
 
+    
     // create a new client
     public function newClient(Request $request){
         // check if current user is an admin
@@ -71,28 +72,42 @@ class AdminController extends Controller
         $card_sn = $this->genWalletId($request->input('phone_no'));
         if ($access_token != null) {
             try{
-                $client = new Client(['base_uri' => $this->base_uri]);
-                $response = $client->post('/gateway/v1/account/open', [
-                    RequestOptions::JSON => [
-                        "customerType" => "2",
-                        "countryCode" => "234",
-                        "loginName" => $request->input('phone_no'),
-                        "phoneNumber" => $request->input('phone_no'),
-                        "firstName" => $request->input('first_name'),
-                        "lastName" => $request->input('last_name'),
-                        "companyName" => $request->input('company_name'),
-                        "loginPassword" => $request->input('login_password'),
-                        "pin" => $request->input('card_pin'),
-                        "cardSn" => $card_sn
-                    ],
+                $body = null; $account = null;
+                // create efull pay account if user type is not admin
+                if($this->getUserCatCode(strtoupper($request->input('acc_type'))) != $this->getUserCatCode("ADMIN")){
+                    $client = new Client(['base_uri' => $this->base_uri]);
+                    $response = $client->post('/gateway/v1/account/open', [
+                        RequestOptions::JSON => [
+                            "customerType" => "2",
+                            "countryCode" => "234",
+                            "loginName" => $request->input('phone_no'),
+                            "phoneNumber" => $request->input('phone_no'),
+                            "firstName" => $request->input('first_name'),
+                            "lastName" => $request->input('last_name'),
+                            "companyName" => $request->input('company_name'),
+                            "loginPassword" => $request->input('login_password'),
+                            "pin" => $request->input('card_pin'),
+                            "cardSn" => $card_sn
+                        ],
 
-                    'headers' => [
-                        'Accept' => 'application/json',
-                        'Content-type' => 'application/json',
-                        'accessToken' => "{$access_token}"
-                    ]
-                ]);
-                $body = $response->getBody();
+                        'headers' => [
+                            'Accept' => 'application/json',
+                            'Content-type' => 'application/json',
+                            'accessToken' => "{$access_token}"
+                        ]
+                    ]);
+                    $body = $response->getBody();
+                    // get efupay account info using phone number
+                    $client_2 = new Client(['base_uri' => $this->base_uri]);
+                    $response = $client_2->request('GET', '/gateway/v1/account/'.$request->input('phone_no'), [
+                        'headers' => [
+                            'Accept' => 'application/json',
+                            'Content-type' => 'application/json',
+                            'accessToken' => "{$access_token}"
+                        ]
+                    ]);
+                    $account = json_decode($response->getBody()->getContents(), true);
+                }
                 // check if account creation was successful
                 if(strlen($body) == 0){ //successfully created on the efull pay platform
                     // create user account on fuel card database
@@ -106,15 +121,22 @@ class AdminController extends Controller
                     $user->email = $request->input('email');
                     $user->save();
                     if($user->user_cat != $this->getUserCatCode("ADMIN")){
+                        // get
                         // create a company record on the db
                         $com = new Company();
                         $com->company_name = $request->input("company_name");
                         $com->wallet_id = $card_sn;
+                        $com->acc_type = $this->getUserCatCode(strtoupper($request->input('acc_type')));
                         $com->company_address = $request->input("company_address");
                         $com->company_phone = $request->input("phone_no");
                         $com->company_email = $request->input("email");
                         $com->reg_number = $request->input("reg_number");
                         $com->is_active = true;
+                        if($account !== null){
+                            $com->seller_id = $account['userId'];
+                        }else{
+                            $com->seller_id = null;
+                        }
                         $com->save();
                         // create company default card
                         $card = new Card();
@@ -123,7 +145,7 @@ class AdminController extends Controller
                         $card->expiry_month = "12";
                         $card->expiry_year = "25";
                         $card->company_id = $com->id;
-                        $card->holder_id = null;
+                        $card->holder_id = $user->id;
                         $card->is_active = true;
                         $card->save();
                         // bind card_sn to company wallet on efuPay
@@ -133,7 +155,8 @@ class AdminController extends Controller
                             "code" => $response->getStatusCode(),
                             "account" => $user,
                             "company" => $com,
-                            "wallet_id_binding"=> $card_binding,
+                            "efuPay_account" => $account,
+                            "wallet_id_binding"=> $card_binding
                         ]);
                     }else{
                         // notify admin of success

@@ -11,6 +11,7 @@ use App\Traits\ApiTrait;
 use GuzzleHttp\Client;
 use GuzzleHttp\Psr7;
 use GuzzleHttp\Exception\RequestException;
+use GuzzleHttp\RequestOptions;
 
 class UserController extends Controller {
     use ApiTrait;
@@ -126,7 +127,7 @@ class UserController extends Controller {
                         'accessToken' => "{$access_token}"
                     ]
                 ]);
-                    return $response->getBody()->getContents();
+                return $response->getBody()->getContents();
             }
             catch (RequestException $e) {
                 if ($e->hasResponse()) {
@@ -166,12 +167,14 @@ class UserController extends Controller {
 
      // make API call to external endpoint
      public function efuPayAccessCode(Request $request){
+        $params = json_decode($request->getContent(), true);
+
         try{
             $client = new Client(['base_uri' => $this->base_uri]);
             $response = $client->request('POST', '/gateway/v1/token', [
                 'form_params' => [
-                    "appId" => $request->input('appId'), //"2020010200000008",
-                    "appSecret" => $request->input('appSecret'), //"116bf6ae7fdc8e1cf0a12b4431b5e1fd",
+                    "appId" => $params['appId'], //"2020010200000008",
+                    "appSecret" => $params['appSecret'], //"116bf6ae7fdc8e1cf0a12b4431b5e1fd",
                     "sessionLength" => 30
                 ]
             ]);
@@ -192,4 +195,12 @@ class UserController extends Controller {
         }
     }
 
+    // create RSA Signature
+    public function rsaSignature(Request $request){
+        $params = json_decode($request->getContent(), true);
+        $signature = $this->sign($params['message'], "RSA2");
+        return json_encode([
+                "signature" => $signature
+            ]);
+    }
 }

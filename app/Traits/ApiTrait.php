@@ -14,6 +14,7 @@ use App\Card;
 
 trait ApiTrait
 {
+
     public $base_uri = 'http://openapi.efupay.net';
     public $appId = "2020010200000008";
     public $appSecret = "116bf6ae7fdc8e1cf0a12b4431b5e1fd";
@@ -67,8 +68,8 @@ trait ApiTrait
         }
         catch (RequestException $e) {
             if ($e->hasResponse()) {
-                return Psr7\str($e->getResponse());
-                // return false;
+                // return Psr7\str($e->getResponse());
+                return false;
             }
         }
         return false;
@@ -181,5 +182,16 @@ trait ApiTrait
             }
         }
         return $value;
+    }
+
+    protected function sign($data, $signType = "RSA2"){
+        $priKey = file_get_contents(app_path().'/Http/Controllers/API/private.pem');
+        if ("RSA2" == $signType) {
+            openssl_sign($data, $sign, $priKey, OPENSSL_ALGO_SHA256);
+        } else {
+            openssl_sign($data, $sign, $priKey);
+        }
+        $sign = base64_encode($sign);
+        return $sign;
     }
 }

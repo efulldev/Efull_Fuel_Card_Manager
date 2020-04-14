@@ -14,7 +14,8 @@
         "laravel/framework": "^6.2",
         "laravel/passport": "^8.1",
         "laravel/tinker": "^2.0",
-        "laravel/ui": "^1.1"
+        "laravel/ui": "^1.1",
+        "vlucas/pikirasa": "^1.0"
     },
     "require-dev": {
         "facade/ignition": "^1.4",
@@ -39,7 +40,8 @@
         },
         "classmap": [
             "database/seeds",
-            "database/factories"
+            "database/factories",
+            "app/utils/Crypt"
         ]
     },
     "autoload-dev": {

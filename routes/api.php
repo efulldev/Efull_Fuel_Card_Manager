@@ -24,6 +24,8 @@ Route::POST('login', 'API\UserController@login');
 
 Route::POST('efuPayAccessCode', 'API\UserController@efuPayAccessCode');
 
+Route::POST('rsa', 'API\UserController@rsaSignature');
+
 // request for Access token
 Route::GET('/redirect', 'API\UserController@getAccessToken');
 
@@ -98,6 +100,8 @@ Route::group(['middleware' => 'auth:api'], function(){
         */
         Route::group(['prefix' => 'operations'], function(){
             // create a new client app auth account
+            // Route::POST('newClient', 'API\UserController@register');
+
             // create a new wallet account
             Route::POST('/newWallet', 'API\AdminController@newWallet');
         });
@@ -132,14 +136,6 @@ Route::group(['middleware' => 'auth:api'], function(){
     */
     Route::group(['middleware' => 'merchant'], function () {
 
-        /*
-            operations Group
-        */
-        Route::group(['prefix' => 'operations'], function(){
-            // bind a wallet using card sn to a client app account
-            Route::POST('/bind/wallet', 'API\ClientController@bindWallet');
-
-        });
     });
 
 });
